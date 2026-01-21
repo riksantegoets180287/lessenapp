@@ -64,6 +64,48 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     saveAll(newTopics);
   };
 
+  const moveLesson = (topicId: string, lessonIdx: number, dir: number) => {
+    const newTopics = topics.map(t => {
+      if (t.id === topicId) {
+        const lessons = [...t.lessons].sort((a, b) => a.order - b.order);
+        const target = lessonIdx + dir;
+        if (target < 0 || target >= lessons.length) return t;
+        [lessons[lessonIdx], lessons[target]] = [lessons[target], lessons[lessonIdx]];
+        lessons.forEach((l, i) => l.order = i + 1);
+        return { ...t, lessons };
+      }
+      return t;
+    });
+    saveAll(newTopics);
+  };
+
+  const movePart = (topicId: string, lessonId: string, partIdx: number, dir: number) => {
+    const newTopics = topics.map(t => {
+      if (t.id === topicId) {
+        return {
+          ...t,
+          lessons: t.lessons.map(l => {
+            if (l.id === lessonId) {
+              const parts = [...l.parts].sort((a, b) => a.order - b.order);
+              const target = partIdx + dir;
+              if (target < 0 || target >= parts.length) return l;
+              [parts[partIdx], parts[target]] = [parts[target], parts[partIdx]];
+              parts.forEach((p, i) => p.order = i + 1);
+              return { ...l, parts };
+            }
+            return l;
+          })
+        };
+      }
+      return t;
+    });
+    saveAll(newTopics);
+    if (editingLesson) {
+      const updatedLesson = newTopics.find(t => t.id === topicId)?.lessons.find(l => l.id === lessonId);
+      if (updatedLesson) setEditingLesson({ ...editingLesson, lesson: updatedLesson });
+    }
+  };
+
   // --- CRUD LESSONS ---
   const addLesson = (topicId: string) => {
     const newLesson: Lesson = {
@@ -207,9 +249,13 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               </div>
             </div>
             <div className="p-4 pl-12 space-y-2 border-t border-gray-100">
-              {t.lessons.sort((a,b) => a.order - b.order).map(l => (
+              {t.lessons.sort((a,b) => a.order - b.order).map((l, lessonIdx) => (
                 <div key={l.id} className="flex items-center justify-between p-2 rounded-lg bg-white border border-gray-100 text-sm">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-0.5">
+                      <button onClick={() => moveLesson(t.id, lessonIdx, -1)} disabled={lessonIdx === 0} className="p-0.5 hover:bg-gray-200 rounded disabled:opacity-30"><ArrowUp size={12}/></button>
+                      <button onClick={() => moveLesson(t.id, lessonIdx, 1)} disabled={lessonIdx === t.lessons.length - 1} className="p-0.5 hover:bg-gray-200 rounded disabled:opacity-30"><ArrowDown size={12}/></button>
+                    </div>
                     <IconView icon={l.icon} className="w-4 h-4 text-gray-400" />
                     <span className="font-semibold">{l.title} {!l.isEnabled && <span className="text-[9px] text-red-500 uppercase ml-1">(uit)</span>}</span>
                   </div>
@@ -229,7 +275,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-200 p-4 shrink-0">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -335,9 +381,15 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                     <button onClick={() => addPart(editingLesson.topicId, editingLesson.lesson.id)} className="bg-indigo-600 text-white p-1 rounded hover:bg-indigo-700"><Plus size={14}/></button>
                  </div>
                  <div className="space-y-2">
-                    {editingLesson.lesson.parts.sort((a,b)=>a.order-b.order).map(p => (
+                    {editingLesson.lesson.parts.sort((a,b)=>a.order-b.order).map((p, partIdx) => (
                        <div key={p.id} className="flex items-center justify-between p-2 bg-white rounded border border-indigo-100">
-                          <span className="text-xs font-semibold truncate flex-1">{p.title} {!p.isEnabled && '(uit)'}</span>
+                          <div className="flex items-center gap-2 flex-1">
+                             <div className="flex flex-col gap-0.5">
+                                <button onClick={() => movePart(editingLesson.topicId, editingLesson.lesson.id, partIdx, -1)} disabled={partIdx === 0} className="p-0.5 hover:bg-gray-200 rounded disabled:opacity-30"><ArrowUp size={10}/></button>
+                                <button onClick={() => movePart(editingLesson.topicId, editingLesson.lesson.id, partIdx, 1)} disabled={partIdx === editingLesson.lesson.parts.length - 1} className="p-0.5 hover:bg-gray-200 rounded disabled:opacity-30"><ArrowDown size={10}/></button>
+                             </div>
+                             <span className="text-xs font-semibold truncate">{p.title} {!p.isEnabled && '(uit)'}</span>
+                          </div>
                           <div className="flex gap-1">
                              <button onClick={() => setEditingPart({ topicId: editingLesson.topicId, lessonId: editingLesson.lesson.id, part: p })} className="p-1 text-gray-400 hover:text-indigo-600"><Settings size={14}/></button>
                              <button onClick={() => {

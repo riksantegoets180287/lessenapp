@@ -1,70 +1,190 @@
 
-import { Topic } from './types';
+import { Topic, IconData } from './types';
+import { supabase } from './supabase-client';
 
-const CONTENT_KEY = 'lesmateriaal_content_v1';
+interface DbTopic {
+  id: string;
+  title: string;
+  icon_kind: string | null;
+  icon_name: string | null;
+  icon_data_url: string | null;
+  is_enabled: boolean;
+  date_available: string | null;
+  order: number;
+}
 
-const demoData: Topic[] = [
-  {
-    id: 't1',
-    title: 'Basisvaardigheden',
-    isEnabled: true,
-    order: 1,
-    icon: { kind: 'lucide', name: 'BookOpen' },
-    lessons: [
-      {
-        id: 'l1',
-        title: 'Word Documenten',
-        isEnabled: true,
-        order: 1,
-        learningGoals: 'Leer hoe je een brief schrijft en opmaakt in Word.',
-        startUrl: 'https://office.com',
-        infoUrl: 'https://support.microsoft.com/word',
-        icon: { kind: 'lucide', name: 'NotebookText' },
-        parts: [
-          {
-            id: 'p1',
-            title: 'Brief Indeling',
-            description: 'De standaard opbouw van een zakelijke brief.',
-            learningGoals: 'Een zakelijke brief bestaat uit: Afzender, Datum, Geadresseerde, Onderwerp, Aanhef, Kern, Slot, Ondertekening.',
-            startUrl: 'https://support.microsoft.com',
-            isEnabled: true,
-            order: 1,
-            icon: { kind: 'lucide', name: 'ListChecks' }
-          },
-          {
-            id: 'p2',
-            title: 'Opmaak Oefening',
-            description: 'Oefen met vette tekst en koppen.',
-            learningGoals: 'In dit onderdeel leer je koppen (H1, H2) en dikgedrukte tekst gebruiken.',
-            startUrl: 'https://google.com',
-            isEnabled: true,
-            order: 2,
-            icon: { kind: 'lucide', name: 'PlayCircle' }
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: 't2',
-    title: 'Digitale Veiligheid',
-    isEnabled: false,
-    dateAvailable: '2025-09-01',
-    order: 2,
-    icon: { kind: 'lucide', name: 'Shield' },
-    lessons: []
-  }
-];
+interface DbLesson {
+  id: string;
+  topic_id: string;
+  title: string;
+  icon_kind: string | null;
+  icon_name: string | null;
+  icon_data_url: string | null;
+  learning_goals: string;
+  start_url: string;
+  info_url: string | null;
+  is_enabled: boolean;
+  date_available: string | null;
+  order: number;
+}
 
-export const loadContent = (): Topic[] => {
-  const stored = localStorage.getItem(CONTENT_KEY);
-  if (!stored) {
-    saveContent(demoData);
-    return demoData;
-  }
-  return JSON.parse(stored);
+interface DbPart {
+  id: string;
+  lesson_id: string;
+  title: string;
+  description: string | null;
+  icon_kind: string | null;
+  icon_name: string | null;
+  icon_data_url: string | null;
+  learning_goals: string;
+  start_url: string;
+  info_url: string | null;
+  is_enabled: boolean;
+  date_available: string | null;
+  order: number;
+}
+
+const mapIcon = (iconKind: string | null, iconName: string | null, iconDataUrl: string | null): IconData | undefined => {
+  if (!iconKind) return undefined;
+  return {
+    kind: iconKind as 'lucide' | 'image',
+    name: iconName || undefined,
+    dataUrl: iconDataUrl || undefined
+  };
 };
 
-export const saveContent = (content: Topic[]) => {
-  localStorage.setItem(CONTENT_KEY, JSON.stringify(content));
+export const loadContent = async (): Promise<Topic[]> => {
+  try {
+    const { data: topicsData, error: topicsError } = await supabase
+      .from('topics')
+      .select('*')
+      .order('order');
+
+    if (topicsError) throw topicsError;
+
+    const { data: lessonsData, error: lessonsError } = await supabase
+      .from('lessons')
+      .select('*')
+      .order('order');
+
+    if (lessonsError) throw lessonsError;
+
+    const { data: partsData, error: partsError } = await supabase
+      .from('parts')
+      .select('*')
+      .order('order');
+
+    if (partsError) throw partsError;
+
+    const topics: Topic[] = (topicsData as DbTopic[]).map(t => ({
+      id: t.id,
+      title: t.title,
+      icon: mapIcon(t.icon_kind, t.icon_name, t.icon_data_url),
+      isEnabled: t.is_enabled,
+      dateAvailable: t.date_available || undefined,
+      order: t.order,
+      lessons: (lessonsData as DbLesson[])
+        .filter(l => l.topic_id === t.id)
+        .map(l => ({
+          id: l.id,
+          title: l.title,
+          icon: mapIcon(l.icon_kind, l.icon_name, l.icon_data_url),
+          learningGoals: l.learning_goals,
+          startUrl: l.start_url,
+          infoUrl: l.info_url || undefined,
+          isEnabled: l.is_enabled,
+          dateAvailable: l.date_available || undefined,
+          order: l.order,
+          parts: (partsData as DbPart[])
+            .filter(p => p.lesson_id === l.id)
+            .map(p => ({
+              id: p.id,
+              title: p.title,
+              description: p.description || undefined,
+              icon: mapIcon(p.icon_kind, p.icon_name, p.icon_data_url),
+              learningGoals: p.learning_goals,
+              startUrl: p.start_url,
+              infoUrl: p.info_url || undefined,
+              isEnabled: p.is_enabled,
+              dateAvailable: p.date_available || undefined,
+              order: p.order
+            }))
+        }))
+    }));
+
+    return topics;
+  } catch (error) {
+    console.error('Error loading content:', error);
+    return [];
+  }
+};
+
+export const saveContent = async (content: Topic[]): Promise<void> => {
+  try {
+    for (const topic of content) {
+      const { error: topicError } = await supabase
+        .from('topics')
+        .upsert({
+          id: topic.id,
+          title: topic.title,
+          icon_kind: topic.icon?.kind || null,
+          icon_name: topic.icon?.name || null,
+          icon_data_url: topic.icon?.dataUrl || null,
+          is_enabled: topic.isEnabled,
+          date_available: topic.dateAvailable || null,
+          order: topic.order,
+          updated_at: new Date().toISOString()
+        });
+
+      if (topicError) throw topicError;
+
+      for (const lesson of topic.lessons) {
+        const { error: lessonError } = await supabase
+          .from('lessons')
+          .upsert({
+            id: lesson.id,
+            topic_id: topic.id,
+            title: lesson.title,
+            icon_kind: lesson.icon?.kind || null,
+            icon_name: lesson.icon?.name || null,
+            icon_data_url: lesson.icon?.dataUrl || null,
+            learning_goals: lesson.learningGoals,
+            start_url: lesson.startUrl,
+            info_url: lesson.infoUrl || null,
+            is_enabled: lesson.isEnabled,
+            date_available: lesson.dateAvailable || null,
+            order: lesson.order,
+            updated_at: new Date().toISOString()
+          });
+
+        if (lessonError) throw lessonError;
+
+        for (const part of lesson.parts) {
+          const { error: partError } = await supabase
+            .from('parts')
+            .upsert({
+              id: part.id,
+              lesson_id: lesson.id,
+              title: part.title,
+              description: part.description || null,
+              icon_kind: part.icon?.kind || null,
+              icon_name: part.icon?.name || null,
+              icon_data_url: part.icon?.dataUrl || null,
+              learning_goals: part.learningGoals,
+              start_url: part.startUrl,
+              info_url: part.infoUrl || null,
+              is_enabled: part.isEnabled,
+              date_available: part.dateAvailable || null,
+              order: part.order,
+              updated_at: new Date().toISOString()
+            });
+
+          if (partError) throw partError;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error saving content:', error);
+    throw error;
+  }
 };

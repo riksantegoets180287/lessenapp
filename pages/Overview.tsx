@@ -17,20 +17,27 @@ const Overview: React.FC = () => {
   const [visitCount, setVisitCount] = useState<number>(0);
 
   useEffect(() => {
-    setTopics(loadContent());
-    trackVisit();
-    const stats = loadStats();
-    setVisitCount(stats.totalVisits);
-  }, []);
+    const initializeData = async () => {
+      const content = await loadContent();
+      setTopics(content);
 
-  useEffect(() => {
-    const updateVisitCount = () => {
-      const stats = loadStats();
+      await trackVisit();
+
+      const stats = await loadStats();
       setVisitCount(stats.totalVisits);
     };
 
-    window.addEventListener('focus', updateVisitCount);
-    return () => window.removeEventListener('focus', updateVisitCount);
+    initializeData();
+  }, []);
+
+  useEffect(() => {
+    const updateVisitCount = async () => {
+      const stats = await loadStats();
+      setVisitCount(stats.totalVisits);
+    };
+
+    window.addEventListener('focus', () => updateVisitCount());
+    return () => window.removeEventListener('focus', () => updateVisitCount());
   }, []);
 
   const formatDate = (dateStr?: string) => {

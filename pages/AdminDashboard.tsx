@@ -19,13 +19,20 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const [editingPart, setEditingPart] = useState<{ topicId: string, lessonId: string, part: Part } | null>(null);
 
   useEffect(() => {
-    setTopics(loadContent());
-    setStats(loadStats());
+    const initializeData = async () => {
+      const content = await loadContent();
+      setTopics(content);
+
+      const statsData = await loadStats();
+      setStats(statsData);
+    };
+
+    initializeData();
   }, []);
 
-  const saveAll = (newTopics: Topic[]) => {
+  const saveAll = async (newTopics: Topic[]) => {
     setTopics(newTopics);
-    saveContent(newTopics);
+    await saveContent(newTopics);
   };
 
   // --- CRUD TOPICS ---

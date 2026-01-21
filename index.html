@@ -1,0 +1,51 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digiva Lesmateriaal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --indigo: #20126E;
+        --white: #FFFFFF;
+        --lightGray: #F4F4F4;
+      }
+      body {
+        font-family: 'Open Sans', sans-serif;
+        background-color: var(--lightGray);
+        color: var(--indigo);
+        margin: 0;
+        overflow: hidden; /* Prevent page scroll as requested */
+      }
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Bitter', serif;
+        font-weight: 700;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "name": "Lesapp",
+  "description": "Een overzichtelijke interface voor lesmateriaal in drie stappen: Onderwerpen, Lessen en Onderdelen. Inclusief een admin-paneel voor beheer en statistieken.",
+  "requestFramePermissions": []
+}

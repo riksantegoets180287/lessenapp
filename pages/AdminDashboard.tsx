@@ -5,9 +5,9 @@ import { loadContent, saveContent } from '../storage';
 import { loadStats } from '../stats';
 import IconView from '../components/IconView';
 import IconEditor from '../admin/IconEditor';
-import { 
-  BarChart3, Plus, Trash2, ArrowUp, ArrowDown, LogOut, 
-  Settings, Layout, Book, List, Save, X, Power
+import {
+  BarChart3, Plus, Trash2, ArrowUp, ArrowDown, LogOut,
+  Settings, Layout, Book, List, Save, X, Power, Copy
 } from 'lucide-react';
 
 const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
@@ -157,6 +157,34 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     });
     saveAll(newTopics);
     setEditingPart({ topicId, lessonId, part: newPart });
+  };
+
+  const duplicatePart = (topicId: string, lessonId: string, partToDuplicate: Part) => {
+    const duplicatedPart: Part = {
+      ...partToDuplicate,
+      id: Math.random().toString(36).substr(2, 9),
+      title: `${partToDuplicate.title} (kopie)`,
+    };
+    const newTopics = topics.map(t => {
+      if (t.id === topicId) {
+        return {
+          ...t,
+          lessons: t.lessons.map(l => {
+            if (l.id === lessonId) {
+              const newParts = [...l.parts, { ...duplicatedPart, order: l.parts.length + 1 }];
+              return { ...l, parts: newParts };
+            }
+            return l;
+          })
+        };
+      }
+      return t;
+    });
+    saveAll(newTopics);
+    if (editingLesson) {
+      const updatedLesson = newTopics.find(t => t.id === topicId)?.lessons.find(l => l.id === lessonId);
+      if (updatedLesson) setEditingLesson({ ...editingLesson, lesson: updatedLesson });
+    }
   };
 
   const renderStats = () => {
@@ -391,6 +419,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                              <span className="text-xs font-semibold truncate">{p.title} {!p.isEnabled && '(uit)'}</span>
                           </div>
                           <div className="flex gap-1">
+                             <button onClick={() => duplicatePart(editingLesson.topicId, editingLesson.lesson.id, p)} className="p-1 text-gray-400 hover:text-blue-600" title="Dupliceren"><Copy size={14}/></button>
                              <button onClick={() => setEditingPart({ topicId: editingLesson.topicId, lessonId: editingLesson.lesson.id, part: p })} className="p-1 text-gray-400 hover:text-indigo-600"><Settings size={14}/></button>
                              <button onClick={() => {
                                 if(!confirm('Verwijderen?')) return;

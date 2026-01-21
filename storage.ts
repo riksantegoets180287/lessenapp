@@ -121,6 +121,33 @@ export const loadContent = async (): Promise<Topic[]> => {
 
 export const saveContent = async (content: Topic[]): Promise<void> => {
   try {
+    const currentTopicIds = content.map(t => t.id);
+    const currentLessonIds = content.flatMap(t => t.lessons.map(l => l.id));
+    const currentPartIds = content.flatMap(t => t.lessons.flatMap(l => l.parts.map(p => p.id)));
+
+    const { data: existingTopics } = await supabase.from('topics').select('id');
+    const { data: existingLessons } = await supabase.from('lessons').select('id');
+    const { data: existingParts } = await supabase.from('parts').select('id');
+
+    const topicsToDelete = (existingTopics || []).filter((t: any) => !currentTopicIds.includes(t.id)).map((t: any) => t.id);
+    const lessonsToDelete = (existingLessons || []).filter((l: any) => !currentLessonIds.includes(l.id)).map((l: any) => l.id);
+    const partsToDelete = (existingParts || []).filter((p: any) => !currentPartIds.includes(p.id)).map((p: any) => p.id);
+
+    if (partsToDelete.length > 0) {
+      const { error } = await supabase.from('parts').delete().in('id', partsToDelete);
+      if (error) throw error;
+    }
+
+    if (lessonsToDelete.length > 0) {
+      const { error } = await supabase.from('lessons').delete().in('id', lessonsToDelete);
+      if (error) throw error;
+    }
+
+    if (topicsToDelete.length > 0) {
+      const { error } = await supabase.from('topics').delete().in('id', topicsToDelete);
+      if (error) throw error;
+    }
+
     for (const topic of content) {
       const { error: topicError } = await supabase
         .from('topics')

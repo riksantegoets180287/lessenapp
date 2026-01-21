@@ -31,13 +31,20 @@ const Overview: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const updateVisitCount = async () => {
+    const refreshData = async () => {
+      const content = await loadContent();
+      setTopics(content);
+
       const stats = await loadStats();
       setVisitCount(stats.totalVisits);
     };
 
-    window.addEventListener('focus', () => updateVisitCount());
-    return () => window.removeEventListener('focus', () => updateVisitCount());
+    const handleFocus = () => {
+      refreshData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const formatDate = (dateStr?: string) => {

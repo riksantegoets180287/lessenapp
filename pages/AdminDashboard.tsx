@@ -55,6 +55,48 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     }
   };
 
+  const deleteLesson = (topicId: string, lessonId: string) => {
+    if (confirm('Les verwijderen?')) {
+      const newTopics = topics.map(t => {
+        if (t.id === topicId) {
+          return { ...t, lessons: t.lessons.filter(l => l.id !== lessonId) };
+        }
+        return t;
+      });
+      saveAll(newTopics);
+      if (editingLesson?.lesson.id === lessonId) {
+        setEditingLesson(null);
+      }
+    }
+  };
+
+  const deletePart = (topicId: string, lessonId: string, partId: string) => {
+    if (confirm('Onderdeel verwijderen?')) {
+      const newTopics = topics.map(t => {
+        if (t.id === topicId) {
+          return {
+            ...t,
+            lessons: t.lessons.map(l => {
+              if (l.id === lessonId) {
+                return { ...l, parts: l.parts.filter(p => p.id !== partId) };
+              }
+              return l;
+            })
+          };
+        }
+        return t;
+      });
+      saveAll(newTopics);
+      if (editingLesson) {
+        const updatedLesson = newTopics.find(t => t.id === topicId)?.lessons.find(l => l.id === lessonId);
+        if (updatedLesson) setEditingLesson({ ...editingLesson, lesson: updatedLesson });
+      }
+      if (editingPart?.part.id === partId) {
+        setEditingPart(null);
+      }
+    }
+  };
+
   const moveTopic = (idx: number, dir: number) => {
     const newTopics = [...topics];
     const target = idx + dir;
@@ -289,6 +331,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setEditingLesson({ topicId: t.id, lesson: l })} className="p-1.5 hover:bg-gray-100 rounded text-gray-400"><Settings size={16} /></button>
+                    <button onClick={() => deleteLesson(t.id, l.id)} className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-red-600"><Trash2 size={16} /></button>
                   </div>
                 </div>
               ))}
@@ -360,6 +403,9 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             </div>
             <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
                <button onClick={() => {
+                  deleteTopic(editingTopic.id);
+                }} className="bg-red-500 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-600"><Trash2 size={18} /> Verwijderen</button>
+               <button onClick={() => {
                   saveAll(topics.map(t => t.id === editingTopic.id ? editingTopic : t));
                   setEditingTopic(null);
                 }} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Save size={18} /> Opslaan</button>
@@ -421,11 +467,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                           <div className="flex gap-1">
                              <button onClick={() => duplicatePart(editingLesson.topicId, editingLesson.lesson.id, p)} className="p-1 text-gray-400 hover:text-blue-600" title="Dupliceren"><Copy size={14}/></button>
                              <button onClick={() => setEditingPart({ topicId: editingLesson.topicId, lessonId: editingLesson.lesson.id, part: p })} className="p-1 text-gray-400 hover:text-indigo-600"><Settings size={14}/></button>
-                             <button onClick={() => {
-                                if(!confirm('Verwijderen?')) return;
-                                const newLesson = {...editingLesson.lesson, parts: editingLesson.lesson.parts.filter(x => x.id !== p.id)};
-                                setEditingLesson({...editingLesson, lesson: newLesson});
-                             }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>
+                             <button onClick={() => deletePart(editingLesson.topicId, editingLesson.lesson.id, p.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>
                           </div>
                        </div>
                     ))}
@@ -433,7 +475,10 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               </div>
               <IconEditor value={editingLesson.lesson.icon} onChange={icon => setEditingLesson({...editingLesson, lesson: {...editingLesson.lesson, icon}})} />
             </div>
-            <div className="p-4 bg-gray-50 flex gap-2">
+            <div className="p-4 bg-gray-50 flex gap-3">
+               <button onClick={() => {
+                  deleteLesson(editingLesson.topicId, editingLesson.lesson.id);
+                }} className="bg-red-500 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-600"><Trash2 size={18} /> Verwijderen</button>
                <button onClick={() => {
                   const newTopics = topics.map(t => {
                     if (t.id === editingLesson.topicId) {
@@ -492,7 +537,10 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               </div>
               <IconEditor value={editingPart.part.icon} onChange={icon => setEditingPart({...editingPart, part: {...editingPart.part, icon}})} />
             </div>
-            <div className="p-4 bg-gray-50">
+            <div className="p-4 bg-gray-50 flex gap-3">
+               <button onClick={() => {
+                  deletePart(editingPart.topicId, editingPart.lessonId, editingPart.part.id);
+                }} className="bg-red-500 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-600"><Trash2 size={16} /> Verwijderen</button>
                <button onClick={() => {
                   const updatedPart = editingPart.part;
                   const newTopics = topics.map(t => {
@@ -515,7 +563,7 @@ const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   }
                   saveAll(newTopics);
                   setEditingPart(null);
-                }} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Save size={16} /> Wijzigingen opslaan</button>
+                }} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Save size={16} /> Opslaan</button>
             </div>
           </div>
         </div>

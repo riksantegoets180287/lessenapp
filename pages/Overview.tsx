@@ -23,6 +23,16 @@ const Overview: React.FC = () => {
     setVisitCount(stats.totalVisits);
   }, []);
 
+  useEffect(() => {
+    const updateVisitCount = () => {
+      const stats = loadStats();
+      setVisitCount(stats.totalVisits);
+    };
+
+    window.addEventListener('focus', updateVisitCount);
+    return () => window.removeEventListener('focus', updateVisitCount);
+  }, []);
+
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '';
     const parts = dateStr.split('-');
@@ -241,7 +251,7 @@ const Overview: React.FC = () => {
 
       {!currentTopic && (
         <footer className="bg-white/50 border-t border-gray-200 py-2 px-4 text-center text-[10px] text-gray-500 shrink-0">
-          Jij bent bezoeker nummer {visitCount}
+          Totaal aantal bezoekers: {visitCount}
         </footer>
       )}
 

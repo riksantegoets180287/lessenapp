@@ -46,6 +46,7 @@ export interface Topic {
 
 export interface AppStats {
   totalVisits: number;
+  uniqueVisitors: number;
   clicks: {
     topics: Record<string, number>;
     lessons: Record<string, number>;

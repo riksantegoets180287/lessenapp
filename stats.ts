@@ -5,6 +5,7 @@ const STATS_KEY = 'lesmateriaal_stats_v1';
 
 const getInitialStats = (): AppStats => ({
   totalVisits: 0,
+  uniqueVisitors: 0,
   clicks: {
     topics: {},
     lessons: {},
@@ -22,13 +23,17 @@ export const saveStats = (stats: AppStats) => {
 };
 
 export const trackVisit = () => {
-  const visited = sessionStorage.getItem('visited');
+  const stats = loadStats();
+  stats.totalVisits += 1;
+
+  const visited = sessionStorage.getItem('visited_session');
   if (!visited) {
-    const stats = loadStats();
-    stats.totalVisits += 1;
-    saveStats(stats);
-    sessionStorage.setItem('visited', 'true');
+    stats.uniqueVisitors += 1;
+    sessionStorage.setItem('visited_session', 'true');
   }
+
+  saveStats(stats);
+  console.log('Pageview geregistreerd. Totaal pageviews:', stats.totalVisits, '| Unieke bezoekers:', stats.uniqueVisitors);
 };
 
 export const trackClick = (type: 'topics' | 'lessons' | 'parts', id: string) => {

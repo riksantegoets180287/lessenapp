@@ -185,18 +185,7 @@ const Overview: React.FC = () => {
           {p.description && <p className="text-sm opacity-90 mb-4">{p.description}</p>}
           
           <div className="flex flex-col gap-2 mt-auto">
-            <button 
-              disabled={!p.isEnabled}
-              onClick={() => {
-                trackClick('parts', p.id);
-                setModalContent({ title: p.title, body: <div className="whitespace-pre-wrap">{p.learningGoals}</div> });
-              }}
-              className="flex items-center justify-center gap-2 bg-white text-indigo-900 font-bold py-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors text-xs"
-            >
-              <HelpCircle size={14} />
-              Wat ga je leren?
-            </button>
-            <button 
+            <button
               disabled={!p.isEnabled}
               onClick={() => {
                 trackClick('parts', p.id);
@@ -209,7 +198,7 @@ const Overview: React.FC = () => {
             </button>
 
             {p.infoUrl && (
-              <button 
+              <button
                 disabled={!p.isEnabled}
                 onClick={() => showInfoModal(p)}
                 className="flex items-center justify-center gap-2 bg-white text-indigo-900 font-bold py-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors text-xs"
